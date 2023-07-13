@@ -14,6 +14,31 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dynatrace",
+          "title": "Dynatrace",
+          "icon": "resources/security-white.svg"
+        }
+      ]
+    },
+    "views": {
+      "dynatrace":[
+        { 
+          "id": "thid-party-vulnerabilities",
+          "name": "Third-Party Vulnerabilities"
+        },
+        { 
+          "id": "runtime-vulnerabilities",
+          "name": "Runtime Vulnerabilities"
+        },
+        { 
+          "id": "code-level-vulnerabilities",
+          "name": "Code-Level Vulnerabilities"
+        }
+      ]
+    },
     "configuration": {
       "title": "Dynatrace",
       "properties": {
@@ -21,6 +46,11 @@
           "type": "string",
           "default": "",
           "description": "The url of your Dynatrace tenant"
+        },
+        "dynatrace.filter": {
+          "type": "string",
+          "default": "",
+          "description": "Specify a filter for the security problems, see the documentation for possible values: https://www.dynatrace.com/support/help/shortlink/api-v2-security-problems-get-all"
         },
         "dynatrace.showVulnerabilityCount": {
           "type": "boolean",
