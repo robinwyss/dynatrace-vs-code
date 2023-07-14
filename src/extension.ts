@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import { rejects } from 'assert';
 import { DynatraceVulnerabilityProvider } from './vulnerability-list';
-import { DynatraceApiClient } from './dynatraceApi';
+import { DynatraceApiClient } from './dynatrace-api';
 import { VulnerabilityData, VulnerabilityType } from './types';
 // import fetch from 'node-fetch';
 
@@ -43,10 +43,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const openTenantCommandId = 'dynatrace.openUrl';
 	context.subscriptions.push(vscode.commands.registerCommand(openTenantCommandId, openDynatraceTenant));
+	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.showVulnerability', url => {
+		console.log(url);
+		vscode.commands.executeCommand('vscode.open', url);
+	}));
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-		if (event.affectsConfiguration('dynatrace.showVulnerabilityCount') && showVulnerabilityCount()) {
+		if (event.affectsConfiguration('dynatrace.dynatrace.tenantUrl') && getTenantUrl()) {
 			updateToken(context);
-			updateStatusBar(context);
 		}
 	}));
 

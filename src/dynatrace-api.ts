@@ -28,8 +28,8 @@ export class DynatraceApiClient {
         return new Promise((resolve, reject) => {
             https.get(apiEndpoint, {
                 headers: {
-                    "Accept": "application/json; charset=utf-8",
-                    "Authorization": `Api-Token ${this.token}`
+                    "accept": "application/json; charset=utf-8",
+                    "authorization": `Api-Token ${this.token}`
                 }
             }, res => {
                 if (res.statusCode && res.statusCode > 299) {
