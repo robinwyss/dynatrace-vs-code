@@ -47,16 +47,18 @@
           "default": "",
           "description": "The url of your Dynatrace tenant"
         },
+        "dynatrace.filterType": {
+          "type": "string",
+          "default": "None",
+          "enum": ["None", "Selector", "Git hash"],
+          "description": "Specify a filter for the security problems, see the documentation for possible values: https://www.dynatrace.com/support/help/shortlink/api-v2-security-problems-get-all"
+        },
         "dynatrace.filter": {
           "type": "string",
           "default": "",
-          "description": "Specify a filter for the security problems, see the documentation for possible values: https://www.dynatrace.com/support/help/shortlink/api-v2-security-problems-get-all"
-        },
-        "dynatrace.showVulnerabilityCount": {
-          "type": "boolean",
-          "default": "false",
-          "description": "Shows the number of vulnerabilities in the status bar (will prompt you for an API Token, requires securityProblems.read scope)"
+          "description": "Specify a filter for the security problems, value depends on the selected filter type"
         }
+  
       }
     }
   },

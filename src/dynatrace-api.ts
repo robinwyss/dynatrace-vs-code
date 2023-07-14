@@ -40,11 +40,17 @@ export class DynatraceApiClient {
                 res.on('data', chunk => {
                     data.push(chunk);
                 });
+                res.on('error', error => {
+                    reject(error);
+                });
                 res.on('end', () => {
                     console.log('Response ended: ');
-                    const result = JSON.parse(Buffer.concat(data).toString());
-                    // console.log(res);
-                    resolve(result);
+                    try {
+                        const result = JSON.parse(Buffer.concat(data).toString());
+                        resolve(result);
+                    } catch {
+                        reject(`Invalid response from ${endpoint}, verify Tenant URL `);
+                    }
                 });
             });
         });

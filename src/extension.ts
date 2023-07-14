@@ -14,83 +14,70 @@ let statusBarItem: vscode.StatusBarItem;
 export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Extension "dynatrace" is now active!');
-	const dynatraceTpvVulnerabilityProvider = new DynatraceVulnerabilityProvider(VulnerabilityType.thirdParty);
-	const dynatraceRuntimeVulnerabilityProvider = new DynatraceVulnerabilityProvider(VulnerabilityType.runtime);
-	const dynatraceClvVulnerabilityProvider = new DynatraceVulnerabilityProvider(VulnerabilityType.codeLevel);
-	const tpvTreeView = vscode.window.createTreeView('thid-party-vulnerabilities', { treeDataProvider: dynatraceTpvVulnerabilityProvider });
-	const runtimeTreeView = vscode.window.createTreeView('runtime-vulnerabilities', { treeDataProvider: dynatraceRuntimeVulnerabilityProvider });
-	const clvTreeView = vscode.window.createTreeView('code-level-vulnerabilities', { treeDataProvider: dynatraceClvVulnerabilityProvider });
 
-	// tpvTreeView.message = "Loading...";
-	// runtimeTreeView.message = "Loading...";
-	// clvTreeView.message = "Loading...";
-
-	const tenantUrl = getTenantUrl();
-	if (tenantUrl) {
-		getToken(context).then((token) => {
-			if (token) {
-				const apiClient = new DynatraceApiClient(tenantUrl, token);
-				return updateData(apiClient);
-			}
-		}).then(vulnerabilityData => {
-			if(vulnerabilityData){
-				dynatraceTpvVulnerabilityProvider.updateData(vulnerabilityData.thirdPartyVulnerabilities);
-				dynatraceRuntimeVulnerabilityProvider.updateData(vulnerabilityData.runtimeVulnerabilities);
-				dynatraceClvVulnerabilityProvider.updateData(vulnerabilityData.codeLevelVulnerabilities);
-			}
-		});
+	if (getTenantUrl()) {
+		loadData(context);
 	}
 
-	const openTenantCommandId = 'dynatrace.openUrl';
-	context.subscriptions.push(vscode.commands.registerCommand(openTenantCommandId, openDynatraceTenant));
-	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.showVulnerability', url => {
-		console.log(url);
-		vscode.commands.executeCommand('vscode.open', url);
-	}));
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-		if (event.affectsConfiguration('dynatrace.dynatrace.tenantUrl') && getTenantUrl()) {
+		if (event.affectsConfiguration('dynatrace.tenantUrl') && getTenantUrl()) {
+			updateToken(context);
+		}
+		if (event.affectsConfiguration('dynatrace.tenantUrl') && getTenantUrl()) {
 			updateToken(context);
 		}
 	}));
 
-	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-	statusBarItem.command = openTenantCommandId;
-
-	context.subscriptions.push(statusBarItem);
-
-	updateStatusBar(context);
-
 }
 
-async function updateData(apiClient: DynatraceApiClient):Promise<VulnerabilityData> {
-	const tpv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.thirdParty);
-	const rv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.runtime);
-	const clv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.codeLevel);
-	return {
-		"updated": new Date(),
-		"thirdPartyVulnerabilities": tpv, 
-		"runtimeVulnerabilities": rv, 
-		"codeLevelVulnerabilities": clv
-	};
+async function loadData(context: vscode.ExtensionContext) {
+	const tenantUrl = getTenantUrl();
+	const filterType = getFilterType();
+	const filter = getFilter();
+	getToken(context).then(async (token) => {
+		if (token) {
+			const apiClient = new DynatraceApiClient(tenantUrl, token);
+			const tpv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.thirdParty);
+			const rv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.runtime);
+			const clv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.codeLevel);
+			return {
+				"updated": new Date(),
+				"thirdPartyVulnerabilities": tpv,
+				"runtimeVulnerabilities": rv,
+				"codeLevelVulnerabilities": clv
+			};
+			// return updateData(apiClient);
+		}
+	}).then(vulnerabilityData => {
+		if (vulnerabilityData) {
+			updateView(vulnerabilityData);
+		}
+	}).catch(error => {
+		console.error(error);
+	});
 }
 
-function showVulnerabilityCount() {
-	return vscode.workspace.getConfiguration('dynatrace').get('showVulnerabilityCount');
+function updateView(vulnerabilityData: VulnerabilityData) {
+	const tpvTreeView = vscode.window.createTreeView('thid-party-vulnerabilities', {
+		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.thirdParty, vulnerabilityData.thirdPartyVulnerabilities)
+	});
+	const runtimeTreeView = vscode.window.createTreeView('runtime-vulnerabilities', {
+		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.runtime, vulnerabilityData.runtimeVulnerabilities)
+	});
+	const clvTreeView = vscode.window.createTreeView('code-level-vulnerabilities', {
+		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.codeLevel, vulnerabilityData.codeLevelVulnerabilities)
+	});
 }
 
 function getTenantUrl() {
 	return vscode.workspace.getConfiguration('dynatrace').get('tenantUrl') as string;
 }
 
-function openDynatraceTenant() {
-	const tenantUrl = getTenantUrl();
-	vscode.commands.executeCommand('vscode.open', tenantUrl + '/ui/security/vulnerabilities');
-
+function getFilterType() {
+	return vscode.workspace.getConfiguration('dynatrace').get('filterType') as string;
 }
-
-function updateStatusBar(context: vscode.ExtensionContext): void {
-	statusBarItem.text = 'Vulnerabilities: $(error) 3 $(warning) 5 ';
-	statusBarItem.show();
+function getFilter() {
+	return vscode.workspace.getConfiguration('dynatrace').get('tenantUrl') as string;
 }
 
 async function updateToken(context: vscode.ExtensionContext) {
