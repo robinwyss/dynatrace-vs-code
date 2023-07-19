@@ -2,24 +2,31 @@ import * as https from 'https';
 import { VulnerabilityType } from './types';
 
 export class DynatraceApiClient {
-    constructor(private tenantUrl: string, private token: string) { }
-
-    async fetchVulnerabiliyCount() {
-        const result = await this.callDynatraceAPI('/api/v2/securityProblems?pageSize=500&securityProblemSelector=minRiskScore(%227.0%22),vulnerabilityType(%22THIRD_PARTY%22,%22RUNTIME%22)&fields=%2BriskAssessment&from=now-10m');
-        const critical = result.securityProblems.filter((x: { riskAssessment: { riskScore: number; }; }) => x.riskAssessment.riskScore >= 9.0);
-        const high = result.securityProblems.filter((x: { riskAssessment: { riskScore: number; }; }) => x.riskAssessment.riskScore >= 7.0 && x.riskAssessment.riskScore < 9.0);
-        return { critical: critical.length, high: high.length };
-    }
+    constructor(private tenantUrl: string, private token: string, private filterType: string, private filter: string) { }
 
     async fetchAllVulnerabilities(vulnerabilityType: VulnerabilityType) {
+        console.log(`Dynatrace: fetching ${vulnerabilityType} vulnerabilities, filtered by ${this.filterType}: ${this.filter}`);
         let securityProblems: any[] = [];
-        let result = await this.callDynatraceAPI('/api/v2/securityProblems?pageSize=100&securityProblemSelector=vulnerabilityType(%22' + vulnerabilityType + '%22)&fields=%2BcodeLevelVulnerabilityDetails%2C%2BriskAssessment&sort=-riskAssessment.riskScore&from=now-10m');
+        let securityProblemSelector = this.getSelector(vulnerabilityType);
+        let result = await this.callDynatraceAPI(`/api/v2/securityProblems?pageSize=100&securityProblemSelector=${securityProblemSelector}&fields=%2BcodeLevelVulnerabilityDetails%2C%2BriskAssessment&sort=-riskAssessment.riskScore&from=now-10m`);
         securityProblems = securityProblems.concat(result.securityProblems);
         while (result.nextPageKey) {
             result = await this.callDynatraceAPI('/api/v2/securityProblems?nextPageKey=' + result.nextPageKey);
             securityProblems = securityProblems.concat(result.securityProblems);
         }
         return securityProblems;
+    }
+
+    private getSelector(vulnerabilityType: VulnerabilityType) {
+        let securityProblemSelector = 'vulnerabilityType(%22' + vulnerabilityType + '%22),status("OPEN")';
+        if (this.filterType === "Workload") {
+            securityProblemSelector += `,relatedKubernetesWorkloadNames("${this.filter}")`;
+        } else if (this.filterType === "Tag") {
+            securityProblemSelector += `,tags("${this.filter}")`;
+        } else if (this.filterType === 'selector') {
+            securityProblemSelector += ',' + this.filter;
+        }
+        return securityProblemSelector;
     }
 
     private async callDynatraceAPI(endpoint: string): Promise<any> {

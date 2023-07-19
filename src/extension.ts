@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { rejects } from 'assert';
 import { DynatraceVulnerabilityProvider } from './vulnerability-list';
 import { DynatraceApiClient } from './dynatrace-api';
-import { VulnerabilityData, VulnerabilityType } from './types';
+import { SecurityProblem, VulnerabilityData, VulnerabilityType } from './types';
 // import fetch from 'node-fetch';
 
 let statusBarItem: vscode.StatusBarItem;
@@ -28,6 +28,22 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand('vulnerabilities.reload', () => {
+		console.log('Dynatrace: refreshing data');
+		loadData(context);
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.showVulnerability', args => {
+		const securityProblem = args as SecurityProblem;
+		if (securityProblem.vulnerabilityType === "CODE_LEVEL") {
+			const codelocation = securityProblem.codeLevelVulnerabilityDetails.shortVulnerabilityLocation;
+			const className = codelocation.split('.')[0];
+			const line = codelocation.split(':')[1];
+			vscode.commands.executeCommand('workbench.action.quickOpen', `${className}:${line}`);
+		} else {
+			vscode.commands.executeCommand('vscode.open', securityProblem.url);
+		}
+	}));
 }
 
 async function loadData(context: vscode.ExtensionContext) {
@@ -36,7 +52,7 @@ async function loadData(context: vscode.ExtensionContext) {
 	const filter = getFilter();
 	getToken(context).then(async (token) => {
 		if (token) {
-			const apiClient = new DynatraceApiClient(tenantUrl, token);
+			const apiClient = new DynatraceApiClient(tenantUrl, token, filterType, filter);
 			const tpv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.thirdParty);
 			const rv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.runtime);
 			const clv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.codeLevel);
@@ -77,7 +93,7 @@ function getFilterType() {
 	return vscode.workspace.getConfiguration('dynatrace').get('filterType') as string;
 }
 function getFilter() {
-	return vscode.workspace.getConfiguration('dynatrace').get('tenantUrl') as string;
+	return vscode.workspace.getConfiguration('dynatrace').get('filter') as string;
 }
 
 async function updateToken(context: vscode.ExtensionContext) {
