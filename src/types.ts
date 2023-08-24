@@ -31,23 +31,23 @@ export interface RiskAssessment {
 }
 
 export interface CodeLevelVulnerabilityDetails {
-    processGroupIds:            string[];
-    processGroups:              string[];
+    processGroupIds: string[];
+    processGroups: string[];
     shortVulnerabilityLocation: string;
-    type:                       string;
-    vulnerabilityLocation:      string;
-    vulnerableFunction:         string;
-    vulnerableFunctionInput:    VulnerableFunctionInput;
+    type: string;
+    vulnerabilityLocation: string;
+    vulnerableFunction: string;
+    vulnerableFunctionInput: VulnerableFunctionInput;
 }
 
 export interface VulnerableFunctionInput {
-    type:          string;
+    type: string;
     inputSegments: InputSegment[];
 }
 
 export interface InputSegment {
     value: string;
-    type:  string;
+    type: string;
 }
 
 export enum VulnerabilityType {
@@ -56,9 +56,16 @@ export enum VulnerabilityType {
     codeLevel = "CODE_LEVEL"
 }
 
-export interface VulnerabilityData  {
+export interface VulnerabilityData {
     updated: Date;
     thirdPartyVulnerabilities: SecurityProblem[];
     runtimeVulnerabilities: SecurityProblem[];
     codeLevelVulnerabilities: SecurityProblem[];
+}
+
+export interface Configuration {
+    tenantUrl: string,
+    token: string,
+    filterType: string,
+    filter: string
 }

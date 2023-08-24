@@ -51,7 +51,6 @@ export class DynatraceApiClient {
                     reject(error);
                 });
                 res.on('end', () => {
-                    console.log('Response ended: ');
                     try {
                         const result = JSON.parse(Buffer.concat(data).toString());
                         resolve(result);
