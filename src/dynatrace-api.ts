@@ -14,6 +14,7 @@ export class DynatraceApiClient {
             result = await this.callDynatraceAPI('/api/v2/securityProblems?nextPageKey=' + result.nextPageKey);
             securityProblems = securityProblems.concat(result.securityProblems);
         }
+        console.log(`Dynatrace: return ${securityProblems.length} entries for ${vulnerabilityType}`);
         return securityProblems;
     }
 

@@ -41,11 +41,13 @@ export function activate(context: vscode.ExtensionContext) {
 			const className = codelocation.split('.')[0];
 			const line = codelocation.split(':')[1];
 			vscode.commands.executeCommand('workbench.action.quickOpen', `${className}:${line}`);
-		} else {
+		} else if(securityProblem.vulnerabilityType === "THIRD_PARTY") {
 			const success = await openJavaDependencies();
 			if (!success) {
 				vscode.commands.executeCommand('vscode.open', securityProblem.url);
 			}
+		} else {
+			vscode.commands.executeCommand('vscode.open', securityProblem.url);
 		}
 	}));
 }
