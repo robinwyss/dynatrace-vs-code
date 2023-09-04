@@ -10,11 +10,17 @@ import { fileExists, getPath } from './utils';
 
 let statusBarItem: vscode.StatusBarItem;
 
+// update at most every minute
+const minTimerinterval = 60 * 1000;
+// update every 3min when the view is active
+const autoRereshinterval = 3 * 60 * 1000;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Extension "dynatrace" is now active!');
+
 
 	if (getTenantUrl()) { // get the tenant URL to check if the extension is configured
 		updateData(context);
@@ -24,16 +30,21 @@ export function activate(context: vscode.ExtensionContext) {
 		if (event.affectsConfiguration('dynatrace.tenantUrl') && getTenantUrl()) {
 			updateToken(context);
 		}
-		if (event.affectsConfiguration('dynatrace.tenantUrl') && getTenantUrl()) {
-			updateToken(context);
-		}
 	}));
 
+	// event to reload all vulnerabilities
 	context.subscriptions.push(vscode.commands.registerCommand('vulnerabilities.reload', () => {
 		console.log('Dynatrace: reloading data');
 		updateData(context);
 	}));
 
+	// open vulnerability details in the Dynatrace UI
+	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.openVulnerabilityDetails', async args => {
+		const securityProblem = args as SecurityProblem;
+		vscode.commands.executeCommand('vscode.open', securityProblem.url);
+	}));
+
+	// Navigate to the details of a specific vulnerability (when possible, opens code location)
 	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.showVulnerability', async args => {
 		const securityProblem = args as SecurityProblem;
 		if (securityProblem.vulnerabilityType === "CODE_LEVEL") {
@@ -41,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const className = codelocation.split('.')[0];
 			const line = codelocation.split(':')[1];
 			vscode.commands.executeCommand('workbench.action.quickOpen', `${className}:${line}`);
-		} else if(securityProblem.vulnerabilityType === "THIRD_PARTY") {
+		} else if (securityProblem.vulnerabilityType === "THIRD_PARTY") {
 			const success = await openJavaDependencies();
 			if (!success) {
 				vscode.commands.executeCommand('vscode.open', securityProblem.url);
@@ -50,6 +61,15 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.commands.executeCommand('vscode.open', securityProblem.url);
 		}
 	}));
+
+	// checks at a fixed interval if the content needs to be reloaded
+	setInterval(async () => {
+		const autorefresh = await context.workspaceState.get('dynatrace.autorefresh');
+		if (autorefresh) {
+			updateData(context);
+		}
+
+	}, autoRereshinterval);
 }
 
 async function openJavaDependencies(): Promise<boolean> {
@@ -69,9 +89,13 @@ async function openJavaDependencies(): Promise<boolean> {
 
 async function updateData(context: vscode.ExtensionContext) {
 	const config = await loadConfig(context);
-	if (config) {
-		const vulnerabilityData = await getVulnerabilities(config);
-		updateView(vulnerabilityData);
+	const lastupdate = await context.workspaceState.get('dynatrace.lastupdate');
+	if (!lastupdate || (lastupdate as number) < (new Date().getTime() - minTimerinterval)) {
+		if (config) {
+			const vulnerabilityData = await getVulnerabilities(config);
+			updateView(vulnerabilityData, context);
+			await context.workspaceState.update('dynatrace.lastupdate', new Date().getTime());
+		}
 	}
 }
 
@@ -105,9 +129,18 @@ async function getVulnerabilities(config: Configuration): Promise<VulnerabilityD
 	};
 }
 
-function updateView(vulnerabilityData: VulnerabilityData) {
+function updateView(vulnerabilityData: VulnerabilityData, context: vscode.ExtensionContext) {
 	const tpvTreeView = vscode.window.createTreeView('thid-party-vulnerabilities', {
 		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.thirdParty, vulnerabilityData.thirdPartyVulnerabilities)
+	});
+	tpvTreeView.onDidChangeVisibility(e => {
+		if (e.visible) {
+			updateData(context);
+			enableAutoRefresh(context);
+		} else {
+			disableAutoRefresh(context);
+		}
+		console.log(e);
 	});
 	const runtimeTreeView = vscode.window.createTreeView('runtime-vulnerabilities', {
 		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.runtime, vulnerabilityData.runtimeVulnerabilities)
@@ -147,6 +180,14 @@ async function getToken(context: vscode.ExtensionContext) {
 		}
 	}
 	return userToken;
+}
+
+async function enableAutoRefresh(context: vscode.ExtensionContext) {
+	await context.workspaceState.update('dynatrace.autorefresh', true);
+}
+
+async function disableAutoRefresh(context: vscode.ExtensionContext) {
+	await context.workspaceState.update('dynatrace.autorefresh', false);
 }
 
 // This method is called when your extension is deactivated

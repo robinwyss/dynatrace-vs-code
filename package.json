@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -23,13 +23,6 @@
         }
       ]
     },
-    "commands": [
-      {
-        "command": "vulnerabilities.reload",
-        "title": "Reload",
-        "icon": "$(extensions-refresh)"
-      }
-    ],
     "views": {
       "dynatrace": [
         {
@@ -43,14 +36,6 @@
         {
           "id": "code-level-vulnerabilities",
           "name": "Code-Level Vulnerabilities"
-        }
-      ]
-    },
-    "menus": {
-      "view/title": [
-        {
-          "command": "vulnerabilities.reload",
-          "group": "navigation"
         }
       ]
     },
