@@ -23,6 +23,41 @@
         }
       ]
     },
+    "commands": [
+      {
+        "command": "vulnerabilities.reload",
+        "title": "Reload",
+        "icon": "$(extensions-refresh)"
+      },
+      {
+        "command": "vulnerability.details",
+        "title": "Reload",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "vulnerability.open",
+        "title": "Reload",
+        "icon": "$(bracket)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vulnerabilities.reload",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vulnerability.details",
+          "group": "inline"
+        },
+        {
+          "command": "vulnerability.open",
+          "group": "inline"
+        }
+      ]
+    },
     "views": {
       "dynatrace": [
         {
@@ -48,6 +83,12 @@
           "description": "The url of your Dynatrace tenant",
           "order": 1
         },
+        "dynatrace.token": {
+          "type": "string",
+          "default": "",
+          "description": "API Token",
+          "order": 2
+        },
         "dynatrace.filterType": {
           "type": "string",
           "default": "None",
@@ -58,13 +99,13 @@
             "Workload"
           ],
           "description": "Specify a filter for the security problems, see the documentation for possible values: https://www.dynatrace.com/support/help/shortlink/api-v2-security-problems-get-all",
-          "order": 2
+          "order": 3
         },
         "dynatrace.filter": {
           "type": "string",
           "default": "",
           "description": "Specify a filter for the security problems, value depends on the selected filter type",
-          "order": 3
+          "order": 4
         }
       }
     }

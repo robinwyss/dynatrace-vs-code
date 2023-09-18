@@ -33,20 +33,20 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// event to reload all vulnerabilities
-	context.subscriptions.push(vscode.commands.registerCommand('vulnerabilities.reload', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('vulnerabilities.reload', async () => {
 		console.log('Dynatrace: reloading data');
-		updateData(context);
+		await updateData(context);
 	}));
 
 	// open vulnerability details in the Dynatrace UI
-	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.openVulnerabilityDetails', async args => {
-		const securityProblem = args as SecurityProblem;
+	context.subscriptions.push(vscode.commands.registerCommand('vulnerability.details', async args => {
+		const securityProblem = args.securityProblem as SecurityProblem;
 		vscode.commands.executeCommand('vscode.open', securityProblem.url);
 	}));
 
 	// Navigate to the details of a specific vulnerability (when possible, opens code location)
-	context.subscriptions.push(vscode.commands.registerCommand('dynatrace.showVulnerability', async args => {
-		const securityProblem = args as SecurityProblem;
+	context.subscriptions.push(vscode.commands.registerCommand('vulnerability.open', async args => {
+		const securityProblem = args.securityProblem as SecurityProblem;
 		if (securityProblem.vulnerabilityType === "CODE_LEVEL") {
 			const codelocation = securityProblem.codeLevelVulnerabilityDetails.shortVulnerabilityLocation;
 			const className = codelocation.split('.')[0];
@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 	setInterval(async () => {
 		const autorefresh = await context.workspaceState.get('dynatrace.autorefresh');
 		if (autorefresh) {
-			updateData(context);
+			updateDataIfOutdated(context);
 		}
 
 	}, autoRereshinterval);
@@ -89,13 +89,17 @@ async function openJavaDependencies(): Promise<boolean> {
 
 async function updateData(context: vscode.ExtensionContext) {
 	const config = await loadConfig(context);
+	if (config) {
+		const vulnerabilityData = await getVulnerabilities(config);
+		updateView(vulnerabilityData, context);
+		await context.workspaceState.update('dynatrace.lastupdate', new Date().getTime());
+	}
+}
+
+async function updateDataIfOutdated(context: vscode.ExtensionContext) {
 	const lastupdate = await context.workspaceState.get('dynatrace.lastupdate');
 	if (!lastupdate || (lastupdate as number) < (new Date().getTime() - minTimerinterval)) {
-		if (config) {
-			const vulnerabilityData = await getVulnerabilities(config);
-			updateView(vulnerabilityData, context);
-			await context.workspaceState.update('dynatrace.lastupdate', new Date().getTime());
-		}
+		updateData(context);
 	}
 }
 
@@ -135,7 +139,7 @@ function updateView(vulnerabilityData: VulnerabilityData, context: vscode.Extens
 	});
 	tpvTreeView.onDidChangeVisibility(e => {
 		if (e.visible) {
-			updateData(context);
+			updateDataIfOutdated(context);
 			enableAutoRefresh(context);
 		} else {
 			disableAutoRefresh(context);
@@ -162,24 +166,25 @@ function getFilter() {
 }
 
 async function updateToken(context: vscode.ExtensionContext) {
-	const secrets: vscode.SecretStorage = context.secrets;
+	// const secrets: vscode.SecretStorage = context.secrets;
 
-	const userToken = await vscode.window.showInputBox({ title: 'Enter your Dynatrace API token', password: true });
-	if (userToken !== undefined) {
-		secrets.store("dynatrace-api-token", userToken as string);
-	}
+	// const userToken = await vscode.window.showInputBox({ title: 'Enter your Dynatrace API token', password: true });
+	// if (userToken !== undefined) {
+	// 	secrets.store("dynatrace-api-token", userToken as string);
+	// }
 }
 
 async function getToken(context: vscode.ExtensionContext) {
-	const secrets: vscode.SecretStorage = context.secrets;
-	let userToken = await secrets.get("dynatrace-api-token");
-	if (!userToken) {
-		userToken = await vscode.window.showInputBox({ title: 'Enter your Dynatrace API token', password: true });
-		if (userToken !== undefined) {
-			secrets.store("dynatrace-api-token", userToken as string);
-		}
-	}
-	return userToken;
+	return vscode.workspace.getConfiguration('dynatrace').get('token') as string;
+	// const secrets: vscode.SecretStorage = context.secrets;
+	// let userToken = await secrets.get("dynatrace-api-token");
+	// if (!userToken) {
+	// 	userToken = await vscode.window.showInputBox({ title: 'Enter your Dynatrace API token', password: true });
+	// 	if (userToken !== undefined) {
+	// 		secrets.store("dynatrace-api-token", userToken as string);
+	// 	}
+	// }
+	// return userToken;
 }
 
 async function enableAutoRefresh(context: vscode.ExtensionContext) {
