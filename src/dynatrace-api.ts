@@ -6,7 +6,7 @@ export class DynatraceApiClient {
     constructor(private tenantUrl: string, private token: string, private filterType: string, private filter: string, private logger: LoggingService) { }
 
     async fetchAllVulnerabilities(vulnerabilityType: VulnerabilityType) {
-        this.logger.logInfo(`Dynatrace: fetching ${vulnerabilityType} vulnerabilities, filtered by ${this.filterType}: ${this.filter}`);
+        this.logger.logInfo(`Fetching ${vulnerabilityType} vulnerabilities, filtered by ${this.filterType}: ${this.filter}`);
         let securityProblems: any[] = [];
         let securityProblemSelector = this.getSelector(vulnerabilityType);
         let result = await this.callDynatraceAPI(`/api/v2/securityProblems?pageSize=100&securityProblemSelector=${securityProblemSelector}&fields=%2BcodeLevelVulnerabilityDetails%2C%2BriskAssessment&sort=-riskAssessment.riskScore&from=now-10m`);
@@ -15,7 +15,7 @@ export class DynatraceApiClient {
             result = await this.callDynatraceAPI('/api/v2/securityProblems?nextPageKey=' + result.nextPageKey);
             securityProblems = securityProblems.concat(result.securityProblems);
         }
-        this.logger.logInfo(`Dynatrace: return ${securityProblems.length} entries for ${vulnerabilityType}`);
+        this.logger.logInfo(`Found ${securityProblems.length} entries for ${vulnerabilityType}`);
         return securityProblems;
     }
 

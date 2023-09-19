@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { Configuration } from './types';
 
 export async function fileExists(name: string) {
     if (vscode.workspace.workspaceFolders) {
@@ -37,3 +38,35 @@ export async function asyncSome<T, R>(arr: Readonly<Array<T>>, predicate: (eleme
     }
     return undefined;
 };
+
+export function getTenantUrl() {
+    return vscode.workspace.getConfiguration('dynatrace').get('tenantUrl') as string;
+}
+
+export function getFilterType() {
+    return vscode.workspace.getConfiguration('dynatrace').get('filterType') as string;
+}
+export function getFilter() {
+    return vscode.workspace.getConfiguration('dynatrace').get('filter') as string;
+}
+
+export function getToken() {
+    return vscode.workspace.getConfiguration('dynatrace').get('token') as string;
+}
+
+export function loadConfig(): Configuration | undefined {
+    const tenantUrl = getTenantUrl();
+    const filterType = getFilterType();
+    const filter = getFilter();
+    const token = getToken();
+    if (tenantUrl && token) {
+        return {
+            tenantUrl,
+            token,
+            filterType,
+            filter
+        };
+    } else {
+        return undefined;
+    }
+}
