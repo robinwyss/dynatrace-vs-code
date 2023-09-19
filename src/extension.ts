@@ -6,6 +6,7 @@ import { DynatraceVulnerabilityProvider } from './vulnerability-list';
 import { DynatraceApiClient } from './dynatrace-api';
 import { Configuration, SecurityProblem, VulnerabilityData, VulnerabilityType } from './types';
 import { fileExists, getPath } from './utils';
+import { LoggingService } from './LoggingService';
 // import fetch from 'node-fetch';
 
 let statusBarItem: vscode.StatusBarItem;
@@ -19,11 +20,13 @@ const autoRereshinterval = 3 * 60 * 1000;
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	console.log('Extension "dynatrace" is now active!');
+	const logger = new LoggingService();
+
+	logger.logInfo('Extension is now active!');
 
 
 	if (getTenantUrl()) { // get the tenant URL to check if the extension is configured
-		updateData(context);
+		updateData(context, logger);
 	}
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
@@ -34,8 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// event to reload all vulnerabilities
 	context.subscriptions.push(vscode.commands.registerCommand('vulnerabilities.reload', async () => {
-		console.log('Dynatrace: reloading data');
-		await updateData(context);
+		logger.logInfo('Dynatrace: reloading data');
+		await updateData(context, logger);
 	}));
 
 	// open vulnerability details in the Dynatrace UI
@@ -66,7 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
 	setInterval(async () => {
 		const autorefresh = await context.workspaceState.get('dynatrace.autorefresh');
 		if (autorefresh) {
-			updateDataIfOutdated(context);
+			updateDataIfOutdated(context, logger);
 		}
 
 	}, autoRereshinterval);
@@ -87,19 +90,19 @@ async function openJavaDependencies(): Promise<boolean> {
 }
 
 
-async function updateData(context: vscode.ExtensionContext) {
+async function updateData(context: vscode.ExtensionContext, logger: LoggingService) {
 	const config = await loadConfig(context);
 	if (config) {
-		const vulnerabilityData = await getVulnerabilities(config);
-		updateView(vulnerabilityData, context);
+		const vulnerabilityData = await getVulnerabilities(config, logger);
+		updateView(vulnerabilityData, context, logger);
 		await context.workspaceState.update('dynatrace.lastupdate', new Date().getTime());
 	}
 }
 
-async function updateDataIfOutdated(context: vscode.ExtensionContext) {
+async function updateDataIfOutdated(context: vscode.ExtensionContext, logger: LoggingService) {
 	const lastupdate = await context.workspaceState.get('dynatrace.lastupdate');
 	if (!lastupdate || (lastupdate as number) < (new Date().getTime() - minTimerinterval)) {
-		updateData(context);
+		updateData(context, logger);
 	}
 }
 
@@ -120,8 +123,8 @@ async function loadConfig(context: vscode.ExtensionContext): Promise<Configurati
 	}
 }
 
-async function getVulnerabilities(config: Configuration): Promise<VulnerabilityData> {
-	const apiClient = new DynatraceApiClient(config.tenantUrl, config.token, config.filterType, config.filter);
+async function getVulnerabilities(config: Configuration, logger: LoggingService): Promise<VulnerabilityData> {
+	const apiClient = new DynatraceApiClient(config.tenantUrl, config.token, config.filterType, config.filter, logger);
 	const tpv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.thirdParty);
 	const rv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.runtime);
 	const clv = await apiClient.fetchAllVulnerabilities(VulnerabilityType.codeLevel);
@@ -133,18 +136,17 @@ async function getVulnerabilities(config: Configuration): Promise<VulnerabilityD
 	};
 }
 
-function updateView(vulnerabilityData: VulnerabilityData, context: vscode.ExtensionContext) {
+function updateView(vulnerabilityData: VulnerabilityData, context: vscode.ExtensionContext, logger: LoggingService) {
 	const tpvTreeView = vscode.window.createTreeView('thid-party-vulnerabilities', {
 		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.thirdParty, vulnerabilityData.thirdPartyVulnerabilities)
 	});
 	tpvTreeView.onDidChangeVisibility(e => {
 		if (e.visible) {
-			updateDataIfOutdated(context);
+			updateDataIfOutdated(context, logger);
 			enableAutoRefresh(context);
 		} else {
 			disableAutoRefresh(context);
 		}
-		console.log(e);
 	});
 	const runtimeTreeView = vscode.window.createTreeView('runtime-vulnerabilities', {
 		treeDataProvider: new DynatraceVulnerabilityProvider(VulnerabilityType.runtime, vulnerabilityData.runtimeVulnerabilities)
