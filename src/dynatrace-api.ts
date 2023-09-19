@@ -19,6 +19,12 @@ export class DynatraceApiClient {
         return securityProblems;
     }
 
+    async getVulnerabilityDetails(vulnerabilityId: string) {
+        this.logger.logInfo(`Fetching details for ${vulnerabilityId}`);
+        let result = await this.callDynatraceAPI(`/api/v2/securityProblems/${vulnerabilityId}?fields=%2Bdescription,%2BvulnerableComponents,%2BriskAssessment,%2BcodeLevelVulnerabilityDetails`);
+        return result;
+    }
+
     private getSelector(vulnerabilityType: VulnerabilityType) {
         let securityProblemSelector = 'vulnerabilityType(%22' + vulnerabilityType + '%22),status("OPEN")';
         if (this.filterType === "Workload") {

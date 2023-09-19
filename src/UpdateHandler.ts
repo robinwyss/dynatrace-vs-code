@@ -4,6 +4,7 @@ import { DynatraceApiClient } from "./dynatrace-api";
 import { Configuration, VulnerabilityData, VulnerabilityType } from "./types";
 import { loadConfig } from "./utils";
 import { TreeViewHandler } from "./TreeViewHandler";
+import { Vulnerability } from "./VulnerabilityTreeDataProvider";
 
 
 export class UpdateHandler {
@@ -47,6 +48,16 @@ export class UpdateHandler {
 
         }, this.autoRereshinterval);
 
+    }
+
+    public async getVulnerabilitDetails(vulnerabilityId: string) {
+        const config = loadConfig();
+        if (config) {
+            const apiClient = new DynatraceApiClient(config.tenantUrl, config.token, config.filterType, config.filter, this.logger);
+            return apiClient.getVulnerabilityDetails(vulnerabilityId);
+        } else {
+            this.logger.logError('could not load details, endpoint is not configured');
+        }
     }
 
     private async getVulnerabilities(config: Configuration): Promise<VulnerabilityData> {

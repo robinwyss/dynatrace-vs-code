@@ -9,6 +9,7 @@ import { fileExists, getPath } from './utils';
 import { LoggingService } from './LoggingService';
 import { TreeViewHandler } from './TreeViewHandler';
 import { UpdateHandler } from './UpdateHandler';
+import { VulnerabilityDetailView } from './VulnerabilityDetailView';
 // import fetch from 'node-fetch';
 
 let statusBarItem: vscode.StatusBarItem;
@@ -24,6 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const logger = new LoggingService();
 	const treeViewHandler = new TreeViewHandler(logger);
+	const detailView = new VulnerabilityDetailView();
 	const updateHandler = new UpdateHandler(logger, context, treeViewHandler);
 
 	treeViewHandler.registerVisibilityChangeHandler(e => {
@@ -47,6 +49,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// open vulnerability details in the Dynatrace UI
 	context.subscriptions.push(vscode.commands.registerCommand('vulnerability.details', async args => {
+		const securityProblem = args.securityProblem as SecurityProblem;
+		const vulnerabilityDetail = await updateHandler.getVulnerabilitDetails(securityProblem.securityProblemId);
+		detailView.showVulnreabilityDetails(vulnerabilityDetail);
+	}));
+
+	// open vulnerability details in the Dynatrace UI
+	context.subscriptions.push(vscode.commands.registerCommand('vulnerability.detailsExternal', async args => {
 		const securityProblem = args.securityProblem as SecurityProblem;
 		vscode.commands.executeCommand('vscode.open', securityProblem.url);
 	}));

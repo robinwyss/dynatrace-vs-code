@@ -2,7 +2,7 @@
   "name": "dynatrace",
   "displayName": "Dynatrace",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.79.0"
   },
@@ -31,13 +31,18 @@
       },
       {
         "command": "vulnerability.details",
-        "title": "Reload",
+        "title": "Details",
+        "icon": "$(info)"
+      },
+      {
+        "command": "vulnerability.detailsExternal",
+        "title": "View in Dynatrace",
         "icon": "$(link-external)"
       },
       {
         "command": "vulnerability.open",
-        "title": "Reload",
-        "icon": "$(bracket)"
+        "title": "Open",
+        "icon": "$(code)"
       }
     ],
     "menus": {
@@ -50,6 +55,10 @@
       "view/item/context": [
         {
           "command": "vulnerability.details",
+          "group": "inline"
+        },
+        {
+          "command": "vulnerability.detailsExternal",
           "group": "inline"
         },
         {
