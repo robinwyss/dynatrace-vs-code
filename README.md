@@ -2,7 +2,7 @@
 
 This extension integrates information from Dynatrace Application Security with Visual Studio Code to provide information about vulnerabilities to the developers. Since Dynatrace App Sec detects vulnerabilities at runtime, this requires the application to be deployed to an dev environment monitored by Dynatrace. 
 
-| Note: This extension is not officially supported by Dynatrace
+> Note: This extension is not officially supported by Dynatrace
 
 ## Features
 
