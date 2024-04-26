@@ -104,6 +104,7 @@
           "enum": [
             "None",
             "Selector",
+            "Management Zone",
             "Tag",
             "Workload"
           ],
