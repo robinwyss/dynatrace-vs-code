@@ -16,7 +16,7 @@ Describe specific features of your extension including screenshots of your exten
 
 For example if there is an image subfolder under your extension project workspace:
 
-\!\[Ovreview\]\(images/overview.png\)
+![Ovreview](images/overview.png)
 
 
 ## Requirements
@@ -35,3 +35,15 @@ This extension contributes the following settings:
 * `dynatrace.filterType`: Specify a filter for the security problems, see the documentation for possible values: https://www.dynatrace.com/support/help/shortlink/api-v2-security-problems-get-all
 * `dynatrace.filter`: Specify a filter for the security problems, value depends on the selected filter type
 
+## Building the extension
+To build the extension, the vscode/vsce package needs to be installed:
+```bash
+npm install -g @vscode/vsce
+```
+See [vsce instructions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce) for more details
+
+Once the package is installed, the following command will create a VSIX file that can be installed in vs code:
+```bash
+vsce package
+```
+The generated VSIX file can then be install using the *Install from VSIX* command in the *Extensions* view command dropdown. See [instructions](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) for more details
