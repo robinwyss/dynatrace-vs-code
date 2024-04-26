@@ -29,6 +29,8 @@ export class DynatraceApiClient {
         let securityProblemSelector = 'vulnerabilityType(%22' + vulnerabilityType + '%22),status("OPEN")';
         if (this.filterType === "Workload") {
             securityProblemSelector += `,relatedKubernetesWorkloadNames("${this.filter}")`;
+        } else if (this.filterType === "Management Zone") {
+            securityProblemSelector += `,managementZones("${this.filter}")`;
         } else if (this.filterType === "Tag") {
             securityProblemSelector += `,tags("${this.filter}")`;
         } else if (this.filterType === 'selector') {

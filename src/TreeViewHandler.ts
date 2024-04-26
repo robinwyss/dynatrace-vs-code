@@ -15,14 +15,14 @@ export class TreeViewHandler {
 
 
     constructor(private logger: LoggingService) {
+        this.clvTreeView = window.createTreeView('code-level-vulnerabilities', {
+            treeDataProvider: this.clvTreeDataProvider
+        });
         this.tpvTreeView = window.createTreeView('thid-party-vulnerabilities', {
             treeDataProvider: this.tpvTreeDataProvider
         });
         this.runtimeTreeView = window.createTreeView('runtime-vulnerabilities', {
             treeDataProvider: this.runtimeTreeDataProvider
-        });
-        this.clvTreeView = window.createTreeView('code-level-vulnerabilities', {
-            treeDataProvider: this.clvTreeDataProvider
         });
     }
 
