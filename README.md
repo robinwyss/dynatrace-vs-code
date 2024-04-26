@@ -2,14 +2,14 @@
 
 This extension integrates information from Dynatrace Application Security with Visual Studio Code to provide information about vulnerabilities to the developers. Since Dynatrace App Sec detects vulnerabilities at runtime, this requires the application to be deployed to an dev environment monitored by Dynatrace. 
 
+| Note: This extension is not officially supported by Dynatrace
+
 ## Features
 
 The extension provides information about the following vulnerabilities
 - Third-party vulnerabilities for Java, .NET, Go, Node.js, PHP
 - Vulnerabilities in the runtime for Java, .NET, Node.js
 - Code-Level vulnerabilities for Java
-
-The vulnerabilities are reported in a
 
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
