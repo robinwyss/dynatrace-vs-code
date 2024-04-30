@@ -3,10 +3,7 @@
   "displayName": "Dynatrace",
   "description": "",
   "version": "0.1.0",
-  "repository": {
-    "type": "git",
-    "directory": ""
-  },
+  "repository": "https://github.com/robinwyss/dynatrace-vs-code",
   "engines": {
     "vscode": "^1.79.0"
   },
