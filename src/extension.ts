@@ -62,7 +62,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Navigate to the details of a specific vulnerability (when possible, opens code location)
 	context.subscriptions.push(vscode.commands.registerCommand('vulnerability.open', async args => {
-		const securityProblem = args.securityProblem as SecurityProblem;
+		var securityProblem = args.securityProblem as SecurityProblem;
+		if (!securityProblem) {
+			securityProblem = args.command.arguments[0].securityProblem as SecurityProblem;
+		}
 		if (securityProblem.vulnerabilityType === "CODE_LEVEL") {
 			const codelocation = securityProblem.codeLevelVulnerabilityDetails.shortVulnerabilityLocation;
 			const className = codelocation.split('.')[0];
